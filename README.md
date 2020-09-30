@@ -155,7 +155,7 @@ execute the following
 
 ```python
 from snippets.models import Snippet
-from snippets.serializers import SnippetSerializer
+from snippets.API.serializers import SnippetSerializer
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 
@@ -180,5 +180,30 @@ content = JSONRenderer().render(serializer.data)
 content
 # Outputs JSON serialized data
 ```
+
+Know that we have serialized the data into JSON, we can do the reverse verry easily. In your
+python shell add:
+
+```python
+import io
+
+stream = io.BytesIO(content) # load the content from above which is JSON
+data = JSONParser().parse(stream) # parse the JSON stream to python datatypes
+```
+
+Then we can restore the JSON data to new fully populated object
+
+```python
+serializer = SnippetSerializer(data=data)
+serializer.is_valid()
+# True
+serializer.validated_data
+# OrderedDict([('title', ''), ('code', 'print("hello, world")\n'), ('linenos', False), ('language', 'python'), ('style', 'friendly')])
+serializer.save()
+# <Snippet: Snippet object>
+```
+
+### Using Model Serializers
+
 
 
