@@ -397,21 +397,21 @@ We have concluded the Quick Start Guide part of this documentation. If you want 
 
 #### Table Of Contents
 
-1 [Quick Start](https://github.com/endalk200/DjangoRestFramework/blob/master/README.md).
-2 [Class Based Views](https://github.com/endalk200/DjangoRestFramework/blob/master/ClassBasedViews.md).
-	1 Class Based API Views
-	2 Using Mixins
-	3 Using Generic Class Based Views
-3 Authentication and Permission
-4 Relationships and Hyper Linked APIs
-5 Viewsets andd Routers
-6 Caching
-7 Throtling
-8 Filters
-9 Pagination
-10 Content Negotiation
-11 Metadata and Schemas
-12 Exceptions
-13 Testing 
-14 Settings
-15 AJAX, CSRF, CORS
+1. [Quick Start](https://github.com/endalk200/DjangoRestFramework/blob/master/README.md).
+2. [Class Based Views](https://github.com/endalk200/DjangoRestFramework/blob/master/ClassBasedViews.md).
+	1. Class Based API Views
+	2. Using Mixins
+	3. Using Generic Class Based Views
+3. Authentication and Permission
+4. Relationships and Hyper Linked APIs
+5. Viewsets andd Routers
+6. Caching
+7. Throtling
+8. Filters
+9. Pagination
+10. Content Negotiation
+11. Metadata and Schemas
+12. Exceptions
+13. Testing 
+14. Settings
+15. AJAX, CSRF, CORS
