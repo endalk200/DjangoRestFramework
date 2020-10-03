@@ -359,6 +359,7 @@ def snippet_list(request):
 ```
 
 Here is the view for an individual snippet, in the views.py module.
+
 ```python
 @api_view(['GET', 'PUT', 'DELETE'])
 def snippet_detail(request, pk):
@@ -394,3 +395,23 @@ Now the API are browseablefrom the browser to test your API endpoints.
 
 We have concluded the Quick Start Guide part of this documentation. If you want to go in depth use the content table bellow.
 
+#### Table Of Contents
+
+1 [Quick Start](https://github.com/endalk200/DjangoRestFramework/blob/master/README.md).
+2 [Class Based Views](https://github.com/endalk200/DjangoRestFramework/blob/master/ClassBasedViews.md).
+	1 Class Based API Views
+	2 Using Mixins
+	3 Using Generic Class Based Views
+3 Authentication and Permission
+4 Relationships and Hyper Linked APIs
+5 Viewsets andd Routers
+6 Caching
+7 Throtling
+8 Filters
+9 Pagination
+10 Content Negotiation
+11 Metadata and Schemas
+12 Exceptions
+13 Testing 
+14 Settings
+15 AJAX, CSRF, CORS
