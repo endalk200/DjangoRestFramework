@@ -1,3 +1,6 @@
+
+![Tux, the Linux mascot](https://www.django-rest-framework.org/img/logo.png)
+
 # DjangoRestFramework
 
 Django REST framework is a powerful and flexible toolkit for building Web APIs.
@@ -147,7 +150,7 @@ A serializer class is very similar to a Django Form class, and includes similar 
 
 ### How To Use Serializers
 
-Before we proced lets se how we can use the serializer we just created in python shell
+Before we proced lets see how we can use the serializer we just created in python shell
 
 	python manage.py shell
 	
@@ -205,5 +208,189 @@ serializer.save()
 
 ### Using Model Serializers
 
+The `SnippetSerializer` we just created is replicating a lot of information we have in our
+`Snippet` model. Since rednundant code is not verry concise and maintainable we have to tweak it a little.
 
+Luckly `DjangoRestFramework` provides `ModelSerializer` just like `ModelForm` in django and can be used to serialize a django model.
+
+Lets refactor `snippets/API/serializers.py` file and add the following.
+
+```python
+class SnippetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Snippet
+        fields = ['id', 'title', 'code', 'linenos', 'language', 'style']
+```
+The serializer we just created don't do anything by themselves we have to create API views to access the data represented by the serializer.
+
+Create `views.py` file in your `snippets/API/` directory and added the following imports to get
+started.
+
+```python
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.parsers import JSONParser
+from snippets.models import Snippet
+from snippets.serializers import SnippetSerializer
+```
+
+The root of our API is going to be a view that supports listing all the existing snippets, or creating a new snippet.
+
+```
+@csrf_exempt
+def snippet_list(request):
+    """
+    List all code snippets, or create a new snippet.
+    """
+    if request.method == 'GET':
+        snippets = Snippet.objects.all()
+        serializer = SnippetSerializer(snippets, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = SnippetSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=400)
+```
+
+Note that because we want to be able to POST to this view from clients that won't have a CSRF token we need to mark the view as csrf_exempt. 
+This isn't something that you'd normally want to do, and REST framework views actually use more sensible behavior than this, but it'll do for our purposes right now.
+
+The above view only handles retrieving the snippets list and create a new one. we need new view
+for individual snippet actions like fetching the detail, updating and deleting the snippet.
+
+```python
+@csrf_exempt
+def snippet_detail(request, pk):
+    """
+    Retrieve, update or delete a code snippet.
+    """
+    try:
+        snippet = Snippet.objects.get(pk=pk)
+    except Snippet.DoesNotExist:
+        return HttpResponse(status=404)
+
+    if request.method == 'GET':
+        serializer = SnippetSerializer(snippet)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'PUT':
+        data = JSONParser().parse(request)
+        serializer = SnippetSerializer(snippet, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse(serializer.errors, status=400)
+
+    elif request.method == 'DELETE':
+        snippet.delete()
+        return HttpResponse(status=204)
+```
+
+Finally we need these views we just created to be discoverable, so create `snippets/API/urls.py` 
+file and add the following routes.
+
+```python
+from django.urls import path
+from snippets import views
+
+urlpatterns = [
+    path('snippets/', views.snippet_list),
+    path('snippets/<int:pk>/', views.snippet_detail),
+]
+```
+
+and then we need register the new `snippets/API/urls.py` file to the main `rest_frameworks_tutorial/urls.py`.
+
+```python
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('snippets.API.urls')),
+]
+```
+
+Now we can view our API from the browser go to `http://127.0.0.1:8000/snippets/` and that route 
+will list all snippets stored in the database in serialized JSON format.
+
+So far the views we have created can technically perform CRUD operation but we could polish them 
+a little to add context to responses.
+
+REST framework provides two wrappers you can use to write API views.
+
+* The `@api_view` decorator for working with function based views.
+* The `APIView` class for working with class-based views.
+
+These wrappers provide a few bits of functionality such as making sure you receive Request instances in your view, and adding context to Response objects so that content negotiation can be performed.
+
+The wrappers also provide behaviour such as returning `405_Method_Not_Allowed` responses when appropriate, and handling any `ParseError`exceptions that occur when accessing `request.data` with malformed input.
+
+So lest use these new components to refactor our views a little bit.
+
+```python
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from snippets.models import Snippet
+from snippets.serializers import SnippetSerializer
+
+
+@api_view(['GET', 'POST'])
+def snippet_list(request):
+    """
+    List all code snippets, or create a new snippet.
+    """
+    if request.method == 'GET':
+        snippets = Snippet.objects.all()
+        serializer = SnippetSerializer(snippets, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = SnippetSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+```
+
+Here is the view for an individual snippet, in the views.py module.
+```python
+@api_view(['GET', 'PUT', 'DELETE'])
+def snippet_detail(request, pk):
+    """
+    Retrieve, update or delete a code snippet.
+    """
+    try:
+        snippet = Snippet.objects.get(pk=pk)
+    except Snippet.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = SnippetSerializer(snippet)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = SnippetSerializer(snippet, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        snippet.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+```
+
+This should all feel very familiar - it is not a lot different from working with regular Django views.
+
+Notice that we're no longer explicitly tying our requests or responses to a given content type. `request.data` can handle incoming json requests, but it can also handle other formats. Similarly we're returning response objects with data, but allowing REST framework to render the response into the correct content type for us.
+
+Now the API are browseablefrom the browser to test your API endpoints. 
+
+We have concluded the Quick Start Guide part of this documentation. If you want to go in depth use the content table bellow.
 
